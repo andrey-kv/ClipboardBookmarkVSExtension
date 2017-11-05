@@ -66,6 +66,7 @@
   <ItemGroup>
     <Compile Include="CopyPosition.cs" />
     <Compile Include="CopyPositionPackage.cs" />
+    <Compile Include="Model\BufferModel.cs" />
     <Compile Include="Model\NavigateModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

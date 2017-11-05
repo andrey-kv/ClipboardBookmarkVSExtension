@@ -1,14 +1,9 @@
-﻿using System;
-using System.ComponentModel.Design;
-using System.Globalization;
+﻿using ClipboardBookmark.Model;
+using EnvDTE;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
-using EnvDTE;
-using Microsoft.VisualStudio;
-using Microsoft.VisualStudio.TextManager.Interop;
-using System.Diagnostics;
-using System.Resources;
-using ClipboardBookmark.Model;
+using System;
+using System.ComponentModel.Design;
 
 namespace ClipboardBookmark
 {
@@ -108,34 +103,27 @@ namespace ClipboardBookmark
                 TextDocument textDoc = (TextDocument)activeDoc.Object("TextDocument");
                 if (textDoc != null)
                 {
-                    string fullName = activeDoc.FullName;
-                    var bottomLine = textDoc.Selection.BottomLine;
-                    //var topLine = textDoc.Selection.TopLine;
-                    System.Windows.Forms.Clipboard.SetText(fullName + "|" + bottomLine + "\r\n");
+                    var bufferModel = new BufferModel();
+                    bufferModel.bufferBody = activeDoc.FullName;
+                    bufferModel.topPosition = textDoc.Selection.TopLine;
+                    bufferModel.bottomPosition = textDoc.Selection.BottomLine;
+                    bufferModel.BufferToClipboard();
                 }
             }
         }
 
         private void MenuItemPasteCallback(object sender, EventArgs e)
         {
-            string message = System.Windows.Forms.Clipboard.GetText();
-            bool positionExtracted = false;
-            if (message.Contains("|") && message.Length < 500)
+            var bufferModel = new BufferModel();
+            if (bufferModel.ClipboardToBuffer())
             {
-                var spl = message.Split('|');
-                if (spl.Length <= 2 && spl.Length > 0)
-                {
-                    string fileName = spl[0];
-                    string line = spl.Length == 1 ? "0" : spl[1];
-                    positionExtracted = true;
-                    navigateModel.OpenFileAndGotoLine(fileName, line);
-                }
+                navigateModel.OpenFileAndGotoLine(bufferModel);
             }
-            if (!positionExtracted)
+            else
             {
                 string title = "Paste Position";
+                string message = "Position could not be extracted from clipboard.";
 
-                message = "Position could not be extracted from clipboard.";
                 VsShellUtilities.ShowMessageBox(
                     this.ServiceProvider,
                     message,
@@ -144,7 +132,6 @@ namespace ClipboardBookmark
                     OLEMSGBUTTON.OLEMSGBUTTON_OK,
                     OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
             }
-
         }
     }
 }

@@ -3,17 +3,13 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.TextManager.Interop;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ClipboardBookmark.Model
 {
     class NavigateModel
     {
-        public void OpenFileAndGotoLine(string fileName, string stringLine)
+        public void OpenFileAndGotoLine(string fileName, int topLine, int bottomLine)
         {
             IVsUIShellOpenDocument openDoc = Package.GetGlobalService(typeof(IVsUIShellOpenDocument)) as IVsUIShellOpenDocument;
             IVsWindowFrame frame;
@@ -45,9 +41,12 @@ namespace ClipboardBookmark.Model
                 }
             }
             IVsTextManager mgr = Package.GetGlobalService(typeof(VsTextManagerClass)) as IVsTextManager;
-            int line = 0;
-            Int32.TryParse(stringLine, out line);
-            mgr.NavigateToLineAndColumn(buffer, ref logicalView, line, 0, line, 0);
+            mgr.NavigateToLineAndColumn(buffer, ref logicalView, topLine, 0, bottomLine, 0);
+        }
+
+        public void OpenFileAndGotoLine(BufferModel bufferModel)
+        {
+            OpenFileAndGotoLine(bufferModel.bufferBody, bufferModel.topPosition, bufferModel.bottomPosition);
         }
     }
 }
