@@ -7,6 +7,8 @@ using EnvDTE;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.TextManager.Interop;
 using System.Diagnostics;
+using System.Resources;
+using ClipboardBookmark.Model;
 
 namespace ClipboardBookmark
 {
@@ -30,6 +32,7 @@ namespace ClipboardBookmark
         /// VS Package that provides this command, not null.
         /// </summary>
         private readonly Package package;
+        private NavigateModel navigateModel;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CopyPosition"/> class.
@@ -56,6 +59,8 @@ namespace ClipboardBookmark
                 var menuItemPaste = new MenuCommand(this.MenuItemPasteCallback, menuPasteCommandID);
                 commandService.AddCommand(menuItemPaste);
             }
+
+            this.navigateModel = new NavigateModel();
         }
 
         /// <summary>
@@ -123,7 +128,7 @@ namespace ClipboardBookmark
                     string fileName = spl[0];
                     string line = spl.Length == 1 ? "0" : spl[1];
                     positionExtracted = true;
-                    OpenFileAndGotoLine(fileName, line);
+                    navigateModel.OpenFileAndGotoLine(fileName, line);
                 }
             }
             if (!positionExtracted)
@@ -140,44 +145,6 @@ namespace ClipboardBookmark
                     OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
             }
 
-        }
-
-        private void OpenFileAndGotoLine(string fileName, string stringLine)
-        {
-            IVsUIShellOpenDocument openDoc = Package.GetGlobalService(typeof(IVsUIShellOpenDocument)) as IVsUIShellOpenDocument;
-            IVsWindowFrame frame;
-            Microsoft.VisualStudio.OLE.Interop.IServiceProvider sp;
-            IVsUIHierarchy hier;
-            uint itemid;
-            Guid logicalView = VSConstants.LOGVIEWID_Code;
-            if (ErrorHandler.Failed(openDoc.OpenDocumentViaProject(fileName, ref logicalView, out sp, out hier, out itemid, out frame))
-                  || frame == null)
-            {
-                return;
-            }
-            object docData;
-            frame.GetProperty((int)__VSFPROPID.VSFPROPID_DocData, out docData);
-            VsTextBuffer buffer = docData as VsTextBuffer;
-            if (buffer == null)
-            {
-                IVsTextBufferProvider bufferProvider = docData as
-                  IVsTextBufferProvider;
-                if (bufferProvider != null)
-                {
-                    IVsTextLines lines;
-                    ErrorHandler.ThrowOnFailure(bufferProvider.GetTextBuffer(out lines));
-                    buffer = lines as VsTextBuffer;
-                    Debug.Assert(buffer != null, "IVsTextLines does not implement IVsTextBuffer");
-                    if (buffer == null)
-                    {
-                        return;
-                    }
-                }
-            }
-            IVsTextManager mgr = Package.GetGlobalService(typeof(VsTextManagerClass)) as IVsTextManager;
-            int line = 0;
-            Int32.TryParse(stringLine, out line);
-            mgr.NavigateToLineAndColumn(buffer, ref logicalView, line, 0, line, 0);
         }
     }
 }
